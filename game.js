@@ -1,8 +1,10 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const canvas = typeof document !== 'undefined' ? document.getElementById('gameCanvas') : null;
+const ctx = canvas ? canvas.getContext('2d') : null;
 
-canvas.width = 800;
-canvas.height = 600;
+if (canvas) {
+    canvas.width = 800;
+    canvas.height = 600;
+}
 
 const GRAVITY = 0.15;
 const PLAYER_SPEED = 2.5;
@@ -59,9 +61,10 @@ let gameWon = false;
 
 const keys = {};
 
+if (typeof window !== 'undefined') {
 window.addEventListener('keydown', e => {
     if (!keys[e.code]) {
-        if (e.code === 'ShiftLeft' || e.code === 'KeyZ') {
+        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyZ') {
             jump();
         }
         if (e.code === 'KeyR') {
@@ -74,6 +77,7 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => {
     keys[e.code] = false;
 });
+}
 
 function jump() {
     if (player.onGround) {
@@ -271,24 +275,46 @@ function draw() {
 }
 
 function gameLoop() {
-    if (!gameWon) {
-        update();
-        draw();
-    } else {
-        ctx.fillStyle = 'white';
-        ctx.font = '48px Arial';
-        ctx.fillText('YOU ARE THE GUY!', 200, 300);
-        ctx.font = '24px Arial';
-        ctx.fillText(`Final Deaths: ${deaths}`, 300, 350);
-        ctx.fillText('Press R to play again', 300, 400);
-        if (keys['KeyR']) {
-            gameWon = false;
-            deaths = 0;
-            spawnPoint = { x: 100, y: 100 };
-            die();
+    if (ctx) {
+        if (!gameWon) {
+            update();
+            draw();
+        } else {
+            ctx.fillStyle = 'white';
+            ctx.font = '48px Arial';
+            ctx.fillText('YOU ARE THE GUY!', 200, 300);
+            ctx.font = '24px Arial';
+            ctx.fillText(`Final Deaths: ${deaths}`, 300, 350);
+            ctx.fillText('Press R to play again', 300, 400);
+            if (keys['KeyR']) {
+                gameWon = false;
+                deaths = 0;
+                spawnPoint = { x: 100, y: 100 };
+            player.x = spawnPoint.x;
+            player.y = spawnPoint.y;
+            player.vy = 0;
+            player.vx = 0;
+            player.jumpCount = 0;
+            // Reset traps
+            for (let trap of traps) {
+                if (trap.type === 'falling') {
+                    trap.y = trap.initialY;
+                    trap.vy = 0;
+                    trap.triggered = false;
+                } else if (trap.type === 'hidden-spike') {
+                    trap.triggered = false;
+                }
+            }
+            }
         }
+        requestAnimationFrame(gameLoop);
     }
-    requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+if (typeof window !== 'undefined') {
+    gameLoop();
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { checkCollision };
+}
